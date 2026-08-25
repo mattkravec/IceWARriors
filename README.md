@@ -54,7 +54,7 @@ Where the main dashboard answers *what is this player worth going forward*, the 
 
 **Projections** is this same WAR model: 1,039 players ranked by remaining-career WAR, projected total, current talent, 2025-26 WAR, or career-to-date, with the projected talent path and its range.
 
-The halves cross-link on MoneyPuck `playerId`, so no name matching is involved. Open a player in the shot explorer and a banner shows their remaining WAR, peak level and age, and talent rate, with a button into the projection; the projection has a button back to their shot map. The **`WAR 25`** column in the skater and goalie tables is that same 2025-26 figure — it's career-level, so it does *not* change when you move the season filter, and it reads `—` for players the model has no projection for.
+The halves cross-link on MoneyPuck `playerId`, so no name matching is involved. Open a player in the shot explorer and a banner shows their remaining WAR, peak level and age, and talent rate, with a button into the projection; the projection has a button back to their shot map. The **`WAR`** column in the skater and goalie tables tracks the season filter — it shows that player's actual WAR for whichever season is selected. With **All seasons** selected there's no single season to show, so it falls back to 2025-26 WAR. It reads `—` for a season the model has no actual WAR for, and for players the model has no projection for at all.
 
 **Coverage against the model:** 98 of 98 goalies and 859 of 941 skaters. The 82 misses are all real players who never cleared the 100-minute season cutoff (best single season: median 42 minutes, max 98), so their Projections entry says "no shot-explorer rows" rather than offering a dead link.
 
@@ -69,7 +69,7 @@ python scripts/shot_explorer/build.py \
   --out ice_warriors_shot_explorer.html
 ```
 
-First run downloads ~290 MB of shot files into `~/.cache/moneypuck` and takes a few minutes; later runs reuse the cache and finish in under a minute. Requires `pyarrow`. The `--war` flag reads the projections straight out of the dashboard's embedded `const DATA` block, so `dashboard_data.json` isn't needed — drop the flag and the build still succeeds, just without the Projections tab and the `WAR 25` column. See `references/shot_explorer.md` inside the skill for the payload format and the sizing levers.
+First run downloads ~290 MB of shot files into `~/.cache/moneypuck` and takes a few minutes; later runs reuse the cache and finish in under a minute. Requires `pyarrow`. The `--war` flag reads the projections straight out of the dashboard's embedded `const DATA` block, so `dashboard_data.json` isn't needed — drop the flag and the build still succeeds, just without the Projections tab and the `WAR` column. See `references/shot_explorer.md` inside the skill for the payload format and the sizing levers.
 
 ---
 
