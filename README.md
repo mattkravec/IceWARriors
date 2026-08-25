@@ -16,7 +16,8 @@ Everything here is a principled **v1** — honest about its assumptions, not an 
 | `player_value_history_skaters.csv` | Every skater-season with all five WAR components, GAR, and WAR. |
 | `player_value_history_goalies.csv` | Every goalie-season with GSAx and WAR. |
 | `methodology.md` | Full methodology writeup — component construction, calibration, aging/projection, and detailed limitations. |
-| `moneypuck-nhl.skill` | Reusable Claude skill that loads and analyzes the MoneyPuck data (handles all the file quirks). Also contains `scripts/shot_explorer/build.py`, which rebuilds the shot explorer end to end. Install it to rerun analysis on future data. |
+| `moneypuck-nhl.skill` | Reusable Claude skill that loads and analyzes the MoneyPuck data (handles all the file quirks). Install it to rerun analysis on future data. |
+| `scripts/shot_explorer/` | The shot explorer's build pipeline — `build.py`, the UI template it fills, and `PAYLOAD.md` documenting the payload format. One command rebuilds the explorer from scratch. |
 | `dashboard_data.json` | The data the dashboard reads (already embedded in the HTML; here for reuse). |
 
 ---
@@ -69,7 +70,9 @@ python scripts/shot_explorer/build.py \
   --out ice_warriors_shot_explorer.html
 ```
 
-First run downloads ~290 MB of shot files into `~/.cache/moneypuck` and takes a few minutes; later runs reuse the cache and finish in under a minute. Requires `pyarrow`. The `--war` flag reads the projections straight out of the dashboard's embedded `const DATA` block, so `dashboard_data.json` isn't needed — drop the flag and the build still succeeds, just without the Projections tab and the `WAR` column. See `references/shot_explorer.md` inside the skill for the payload format and the sizing levers.
+First run downloads ~290 MB of shot files into `~/.cache/moneypuck` and takes a few minutes; later runs reuse the cache and rebuild in about 30 seconds. Requires `pandas` and `pyarrow`. The `--war` flag reads the projections straight out of the dashboard's embedded `const DATA` block, so `dashboard_data.json` isn't needed. Prefer the HTML over the JSON: `dashboard_data.json` has lost the accented characters in ~14 player names. Drop the flag and the build still succeeds — the Projections tab then comes up empty and the `WAR` column reads `—` for everyone.
+
+Data is found in `--data-dir`, then `$MPDATA_DIR`, then the cache; anything missing is fetched from `$MPDATA_RELEASE_BASE`. `--min-map-shots N` drops shot maps below N career shots, which is the main lever on payload size; `--first-season` / `--last-season` narrow the history. See [`scripts/shot_explorer/PAYLOAD.md`](scripts/shot_explorer/PAYLOAD.md) for the payload format and the data quirks the build handles.
 
 ---
 
@@ -91,7 +94,7 @@ See `references/google_drive.md` inside the skill for the full Drive workflow. N
 
 The WAR value files (`player_value_history_*.csv`) are the durable output of the value model. The projection layer (aging curves, role-conditioned survival/games, talent regression, forward simulation) is rebuilt from those files.
 
-The **shot explorer is fully reproducible** — its pipeline lives in the skill at `scripts/shot_explorer/`, with the UI template beside it and the data provenance documented in `references/shot_explorer.md`. One command rebuilds it from scratch.
+The **shot explorer is fully reproducible** — its pipeline lives in this repo at [`scripts/shot_explorer/`](scripts/shot_explorer/), with the UI template beside it and the payload format documented in [`PAYLOAD.md`](scripts/shot_explorer/PAYLOAD.md). One command rebuilds it from scratch.
 
 **Heads-up:** the *projection* scripts still live in a temporary workspace that resets between sessions, so the projection pipeline — including the role-conditioned prior and the manually-added Barkov — is **not yet baked into anything permanent**. Folding it into the skill the same way is the remaining step, and it's what would let both dashboards rebuild from one command on a new data drop.
 
@@ -118,4 +121,4 @@ The **shot explorer is fully reproducible** — its pipeline lives in the skill 
 2. **Fold the projection pipeline into the skill** so it reruns on new data (and the role-prior + Barkov fixes persist). The shot explorer is already there; this is the last piece.
 3. **Position-split aging curves** (forwards, defensemen, goalies age differently).
 4. **Bayesian projection** with full posterior draws instead of normal-approximation bands.
-5. **Shot-explorer coverage** — drop the 100-minute season cutoff (~8% more payload) so every projected player has a shot map.
+5. **Drop the 100-minute season cutoff** so players below it get season rows too. Shot-map coverage is already complete — every rostered player has one.
