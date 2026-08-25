@@ -312,8 +312,18 @@ const POSN = ['C','LW','RW','D','—'];
 const DS = () => S.tab==='sk' ? SK : GO;
 const warFor = (tab, i) => { const ds = tab==='sk'?SK:GO; const id = ds.ids && ds.ids[i];
   return id!=null ? WAR.byId.get(id) : undefined; };
-const warCol = () => ({k:'war', t:'WAR 25', f:a=>{ const w=warFor(S.tab,a.gi); return w?f1(w.war25):'—'; },
-  c:1, v:a=>{ const w=warFor(S.tab,a.gi); return w?w.war25:-99; }});
+// WAR at a given season: looks up that season's actual figure in the player's
+// history; -1 (All seasons) falls back to the model's latest (2025-26) WAR,
+// since there's no single season to match a combined row against.
+const warAt = (w, season) => {
+  if (!w) return undefined;
+  if (season == null || season < 0) return w.war25;
+  const row = (w.hist||[]).find(h => h[0]===season);
+  return row ? row[1] : undefined;
+};
+const warColLabel = () => S.season>=0 ? `WAR ${SEASLBL(S.season)}` : 'WAR (25-26)';
+const warCol = () => ({k:'war', t:warColLabel(), f:a=>{ const v=warAt(warFor(S.tab,a.gi),S.season); return v!=null?f1(v):'—'; },
+  c:1, v:a=>{ const v=warAt(warFor(S.tab,a.gi),S.season); return v!=null?v:-99; }});
 
 function build(){
   S.season = D.seasons[0];
@@ -719,7 +729,7 @@ function wire(){
   el('mVol').onclick = ()=>{ S.rink='vol'; el('mVol').setAttribute('aria-pressed','true'); el('mPerf').setAttribute('aria-pressed','false'); drawRink(); };
   el('back').onclick = ()=>{ el('detailView').classList.add('hidden'); el('listView').classList.remove('hidden'); window.scrollTo({top:0}); };
 }
-el('globalFoot').textContent = 'Built from MoneyPuck shot-level and skater files, 2008-09 through 2025-26. A shot is any unblocked attempt; empty-net attempts are dropped from the goalie side. Danger tiers use the expected-goal cutoffs that reproduce MoneyPuck\u2019s own tier counts: low below 0.08, medium 0.08 to 0.20, high 0.20 and above. Goalie situations are labelled from the goalie\u2019s side, so a penalty kill means his team is short a skater. Skater regular-season rows come from the season aggregate files and include ice time, assists and on-ice numbers; skater playoff rows are derived from shot data and cover shooting only. Adjusted columns re-base each danger tier on that season\u2019s league average for the same tier and game type, which removes the league-wide drift in the expected-goal model, most of which sits in high danger. The WAR 25 column and the Projections tab come from the Ice WARriors model: five skater components (EVO, EVD, PPO, SHD, PENS) and a GSAx-based goalie model. WAR 25 is that player\u2019s 2025-26 WAR, so it is a single career-level figure and does not change when you move the season filter. It reads \u2014 for anyone the model has no projection for, mostly players who never cleared the 100-minute season cutoff.';
+el('globalFoot').textContent = 'Built from MoneyPuck shot-level and skater files, 2008-09 through 2025-26. A shot is any unblocked attempt; empty-net attempts are dropped from the goalie side. Danger tiers use the expected-goal cutoffs that reproduce MoneyPuck\u2019s own tier counts: low below 0.08, medium 0.08 to 0.20, high 0.20 and above. Goalie situations are labelled from the goalie\u2019s side, so a penalty kill means his team is short a skater. Skater regular-season rows come from the season aggregate files and include ice time, assists and on-ice numbers; skater playoff rows are derived from shot data and cover shooting only. Adjusted columns re-base each danger tier on that season\u2019s league average for the same tier and game type, which removes the league-wide drift in the expected-goal model, most of which sits in high danger. The WAR column and the Projections tab come from the Ice WARriors model: five skater components (EVO, EVD, PPO, SHD, PENS) and a GSAx-based goalie model. It tracks the season filter, showing that player\u2019s actual WAR for whichever season is selected; with All seasons selected there\u2019s no single season to match, so it falls back to 2025-26 WAR. It reads \u2014 for a season the model has no actual WAR for (e.g. before the player\u2019s rookie year), and for anyone the model has no projection for at all, mostly players who never cleared the 100-minute season cutoff.';
 boot();
 </script>
 </body>
